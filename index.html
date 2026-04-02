@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopify Store Audit Tool — RevNiche Systems</title>
+  <style>
+    /* ── Reset & Base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0f14;
+      --surface:   #151820;
+      --card:      #1c2030;
+      --border:    #272c3d;
+      --accent:    #6c63ff;
+      --accent2:   #00d4aa;
+      --text:      #e8eaf0;
+      --muted:     #7a809a;
+      --danger:    #ff5a5a;
+      --warn:      #ffb830;
+      --good:      #00d4aa;
+      --radius:    12px;
+      --radius-sm: 8px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── Header ────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0d0f14 0%, #1a1d2e 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+      flex-shrink: 0;
+    }
+
+    .logo-text { display: flex; flex-direction: column; line-height: 1.15; }
+    .logo-name { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: .3px; }
+    .logo-sub  { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .header-badge {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+    }
+
+    /* ── Layout ────────────────────────────────────────────────── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    .page-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .page-title h1 {
+      font-size: clamp(24px, 4vw, 34px);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 40%, var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .page-title p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    /* ── Cards ─────────────────────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: linear-gradient(var(--accent), var(--accent2));
+      border-radius: 2px;
+    }
+
+    /* ── Form Fields ───────────────────────────────────────────── */
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 600px) { .field-row { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+
+    input[type="text"], input[type="url"], textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color .2s;
+      font-family: inherit;
+      width: 100%;
+    }
+
+    input[type="text"]:focus,
+    input[type="url"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(108,99,255,.12);
+    }
+
+    textarea { resize: vertical; min-height: 72px; }
+
+    /* ── Audit Category ────────────────────────────────────────── */
+    .category-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .category-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 20px 24px;
+      transition: border-color .2s;
+    }
+
+    .category-item:focus-within { border-color: var(--accent); }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .category-info { display: flex; align-items: center; gap: 10px; }
+
+    .cat-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .cat-name  { font-size: 15px; font-weight: 700; }
+    .cat-desc  { font-size: 12px; color: var(--muted); }
+
+    /* ── Score Selector ────────────────────────────────────────── */
+    .score-selector {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .score-label {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .score-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .score-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all .18s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-dot:hover { border-color: var(--accent); color: var(--text); transform: scale(1.08); }
+
+    .score-dot.active-1 { background: #ff5a5a22; border-color: #ff5a5a; color: #ff5a5a; }
+    .score-dot.active-2 { background: #ff8c2a22; border-color: #ff8c2a; color: #ff8c2a; }
+    .score-dot.active-3 { background: #ffb83022; border-color: #ffb830; color: #ffb830; }
+    .score-dot.active-4 { background: #5dd87022; border-color: #5dd870; color: #5dd870; }
+    .score-dot.active-5 { background: #00d4aa22; border-color: #00d4aa; color: #00d4aa; }
+
+    .notes-field { margin-top: 12px; }
+
+    /* ── Buttons ───────────────────────────────────────────────── */
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #857bf0);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s;
+      letter-spacing: .3px;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 22px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn-secondary:hover { border-color: var(--accent); background: rgba(108,99,255,.08); }
+
+    /* ── Report View ───────────────────────────────────────────── */
+    #report-view { display: none; }
+    #audit-form  { display: block; }
+
+    .report-header {
+      background: linear-gradient(135deg, #12152a 0%, #1a1d35 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 40px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .report-header-left h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+    .report-header-left p  { font-size: 13px; color: var(--muted); }
+
+    .overall-score-ring {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+    }
+
+    .ring-wrap svg { transform: rotate(-90deg); }
+
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-score {
+      font-size: 26px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .ring-max { font-size: 11px; color: var(--muted); }
+    .ring-label { font-size: 11px; color: var(--muted); letter-spacing: .8px; text-transform: uppercase; }
+
+    /* ── Score band colors ─ */
+    .grade-poor    { color: var(--danger); }
+    .grade-fair    { color: var(--warn); }
+    .grade-good    { color: #5dd870; }
+    .grade-great   { color: var(--accent2); }
+
+    /* ── Progress Bars ─────────────────────────────────────────── */
+    .scores-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 620px) { .scores-grid { grid-template-columns: 1fr; } }
+
+    .score-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 20px;
+    }
+
+    .score-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .score-card-left { display: flex; align-items: center; gap: 8px; }
+    .sc-icon { font-size: 16px; }
+    .sc-name { font-size: 13px; font-weight: 700; }
+    .sc-val  { font-size: 18px; font-weight: 800; }
+
+    .progress-bar-bg {
+      background: var(--surface);
+      border-radius: 6px;
+      height: 7px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width .6s ease;
+    }
+
+    /* ── Recommendations ───────────────────────────────────────── */
+    .rec-section { margin-bottom: 24px; }
+
+    .rec-section h3 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--accent2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .rec-section h3::before {
+      content: '';
+      display: block;
+      width: 3px;
+      height: 14px;
+      background: linear-gradient(var(--accent), var(--accent2));
+      border-radius: 2px;
+    }
+
+    .rec-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .rec-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .rec-item.priority-high   { border-left-color: var(--danger); }
+    .rec-item.priority-medium { border-left-color: var(--warn); }
+    .rec-item.priority-low    { border-left-color: var(--accent2); }
+
+    .rec-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .rec-badge.high   { background: rgba(255,90,90,.18); color: var(--danger); }
+    .rec-badge.medium { background: rgba(255,184,48,.18); color: var(--warn); }
+    .rec-badge.low    { background: rgba(0,212,170,.18);  color: var(--accent2); }
+
+    .rec-text  { font-size: 13px; line-height: 1.5; }
+    .rec-label { font-weight: 700; font-size: 12px; color: var(--muted); margin-bottom: 2px; }
+
+    /* ── Notes section in report ───────────────────────────────── */
+    .notes-report {
+      background: rgba(108,99,255,.07);
+      border: 1px solid rgba(108,99,255,.2);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      font-style: italic;
+    }
+
+    /* ── Report Actions ─────────────────────────────────────────── */
+    .report-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    /* ── Footer ────────────────────────────────────────────────── */
+    .report-footer {
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .report-footer span { color: var(--accent2); font-weight: 700; }
+
+    /* ── Print styles ───────────────────────────────────────────── */
+    @media print {
+      header, .report-actions { display: none !important; }
+      body { background: #fff; color: #111; }
+      .card, .report-header, .score-card, .rec-item { background: #fff; border: 1px solid #ddd; box-shadow: none; }
+      .card-title, .rec-section h3, .cat-name, .sc-name { color: #222; }
+      .muted, .logo-sub, .rec-label { color: #666; }
+      .progress-bar-bg { background: #eee; }
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    }
+
+    /* ── Utility ────────────────────────────────────────────────── */
+    .text-muted { color: var(--muted); font-size: 13px; }
+    .mt-8 { margin-top: 8px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">RN</div>
+    <div class="logo-text">
+      <span class="logo-name">RevNiche Systems</span>
+      <span class="logo-sub">E-Commerce Consulting</span>
+    </div>
+  </div>
+  <span class="header-badge">Audit Tool</span>
+</header>
+
+<!-- ── Audit Form ───────────────────────────────────────────────── -->
+<main>
+  <div id="audit-form">
+    <div class="page-title">
+      <h1>Shopify Store Audit</h1>
+      <p>Score each category from 1–5, add notes, then generate a branded report.</p>
+    </div>
+
+    <!-- Store Info -->
+    <div class="card">
+      <div class="card-title">Store Information</div>
+      <div class="field-row">
+        <div class="field">
+          <label for="store-name">Store Name</label>
+          <input type="text" id="store-name" placeholder="e.g. Hakini Rug Art" />
+        </div>
+        <div class="field">
+          <label for="store-url">Store URL</label>
+          <input type="url" id="store-url" placeholder="https://yourstore.myshopify.com" />
+        </div>
+      </div>
+      <div class="field mt-8">
+        <label for="auditor">Auditor Name</label>
+        <input type="text" id="auditor" placeholder="Ahmet Nadir Çakmak — RevNiche Systems" />
+      </div>
+    </div>
+
+    <!-- Audit Categories -->
+    <div class="card">
+      <div class="card-title">Audit Categories</div>
+      <div class="category-grid" id="categories-container">
+        <!-- injected by JS -->
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="generateReport()">⚡ Generate Audit Report</button>
+  </div>
+
+  <!-- ── Report View ─────────────────────────────────────────────── -->
+  <div id="report-view">
+    <div class="report-actions">
+      <button class="btn-secondary" onclick="backToForm()">← Back to Audit</button>
+      <button class="btn-secondary" onclick="window.print()">🖨 Print / Save PDF</button>
+    </div>
+
+    <!-- Report Header -->
+    <div class="report-header" id="report-header">
+      <div class="report-header-left">
+        <h2 id="rpt-store-name">Store Name</h2>
+        <p id="rpt-store-url"></p>
+        <p id="rpt-meta" style="margin-top:6px;"></p>
+      </div>
+      <div class="overall-score-ring">
+        <div class="ring-wrap">
+          <svg width="100" height="100" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#1c2030" stroke-width="10"/>
+            <circle id="ring-fill" cx="50" cy="50" r="42" fill="none"
+                    stroke="url(#ringGrad)" stroke-width="10"
+                    stroke-linecap="round"
+                    stroke-dasharray="263.9"
+                    stroke-dashoffset="263.9"/>
+            <defs>
+              <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#6c63ff"/>
+                <stop offset="100%" stop-color="#00d4aa"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-score" id="ring-score-val">0</span>
+            <span class="ring-max">/100</span>
+          </div>
+        </div>
+        <span class="ring-label">Overall Score</span>
+      </div>
+    </div>
+
+    <!-- Per-category score cards -->
+    <div class="scores-grid" id="scores-grid"></div>
+
+    <!-- Recommendations -->
+    <div class="rec-section card">
+      <h3>Recommendations</h3>
+      <div class="rec-list" id="rec-list"></div>
+    </div>
+
+    <!-- Auditor Notes per category (detail) -->
+    <div class="card" id="notes-section" style="display:none;">
+      <div class="card-title">Auditor Notes</div>
+      <div id="notes-detail"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="report-footer">
+      Audit prepared by <span>RevNiche Systems</span> · Shopify Store Optimization &amp; Consulting ·
+      <span id="rpt-date"></span>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ── Category definitions ──────────────────────────────────────── */
+const CATEGORIES = [
+  {
+    id: 'speed',
+    name: 'Page Speed',
+    icon: '⚡',
+    iconBg: 'rgba(108,99,255,.15)',
+    desc: 'Load times, image optimization, app bloat',
+    recs: {
+      1: { priority: 'high',   text: 'Critical: Store loads in 5+ seconds. Compress all images (WebP), remove unused apps, enable lazy loading, and audit your theme for render-blocking scripts.' },
+      2: { priority: 'high',   text: 'Page speed is significantly below average. Audit installed apps — each one adds load time. Use Shopify Speed Report and aim for <3s on mobile.' },
+      3: { priority: 'medium', text: 'Speed is acceptable but improvable. Compress images to <200 KB, defer non-critical JS, and consider a lightweight theme or upgrade to Dawn 2.0+.' },
+      4: { priority: 'low',    text: 'Good speed. Fine-tune by lazy-loading below-the-fold images and enabling Shopify CDN for all assets.' },
+      5: { priority: 'low',    text: 'Excellent speed performance. Maintain by reviewing after every new app install.' },
+    }
+  },
+  {
+    id: 'seo',
+    name: 'SEO',
+    icon: '🔍',
+    iconBg: 'rgba(0,212,170,.12)',
+    desc: 'Meta tags, structured data, keyword targeting',
+    recs: {
+      1: { priority: 'high',   text: 'SEO is critically neglected. Add unique meta titles (50–60 chars) and descriptions (150–160 chars) to every page. Fix duplicate content and set canonical URLs.' },
+      2: { priority: 'high',   text: 'Major SEO gaps. Create an XML sitemap, submit it to Google Search Console, and add alt text to all product images.' },
+      3: { priority: 'medium', text: 'SEO is basic. Add Product schema markup (JSON-LD), use keyword-rich H1 tags on product/collection pages, and optimize blog content.' },
+      4: { priority: 'low',    text: 'Strong SEO foundation. Improve by building internal links between collections/products and targeting long-tail keywords in product descriptions.' },
+      5: { priority: 'low',    text: 'Excellent SEO. Keep content fresh, monitor keyword rankings, and pursue backlink opportunities.' },
+    }
+  },
+  {
+    id: 'product',
+    name: 'Product Pages',
+    icon: '🛍',
+    iconBg: 'rgba(255,184,48,.12)',
+    desc: 'Copy quality, images, variants, social proof',
+    recs: {
+      1: { priority: 'high',   text: 'Product pages are very weak. Add benefit-focused descriptions (not just features), use 3–6 high-res images per product, and show size/material info clearly.' },
+      2: { priority: 'high',   text: 'Product pages need significant work. Add a clear value proposition above the fold, improve CTA button contrast, and display real reviews.' },
+      3: { priority: 'medium', text: 'Product pages are functional but not converting optimally. Add a FAQ section, urgency elements (stock count), and a benefits-led copy structure.' },
+      4: { priority: 'low',    text: 'Good product pages. A/B test your CTA copy ("Buy Now" vs "Add to Cart") and add video content where possible.' },
+      5: { priority: 'low',    text: 'Excellent product pages. Keep testing and updating imagery each season.' },
+    }
+  },
+  {
+    id: 'mobile',
+    name: 'Mobile UX',
+    icon: '📱',
+    iconBg: 'rgba(93,216,112,.12)',
+    desc: 'Responsiveness, touch targets, mobile checkout',
+    recs: {
+      1: { priority: 'high',   text: 'Critical mobile issues. 70%+ of shoppers are on mobile. Fix broken layouts, ensure buttons are ≥44px tall, and remove any horizontal scroll.' },
+      2: { priority: 'high',   text: 'Significant mobile UX problems. Test on real devices (not just browser emulator). Focus on font sizes ≥16px and tap target spacing.' },
+      3: { priority: 'medium', text: 'Mobile is functional but not optimal. Streamline the mobile navigation, reduce the number of steps to checkout, and test with Google Mobile-Friendly Test.' },
+      4: { priority: 'low',    text: 'Good mobile experience. Optimize for thumb-zone navigation and enable Shop Pay/Apple Pay for one-tap checkout.' },
+      5: { priority: 'low',    text: 'Excellent mobile UX. Maintain by testing on new iOS/Android releases.' },
+    }
+  },
+  {
+    id: 'trust',
+    name: 'Trust Signals',
+    icon: '🛡',
+    iconBg: 'rgba(255,90,90,.12)',
+    desc: 'Reviews, badges, guarantees, about page',
+    recs: {
+      1: { priority: 'high',   text: 'Very low trust. Add SSL badge, secure checkout icons, and at least 10 real reviews. Write an About page that tells your story — buyers buy from people.' },
+      2: { priority: 'high',   text: 'Trust signals are missing key elements. Add a money-back guarantee, display real customer photos in reviews, and show a physical address or support email.' },
+      3: { priority: 'medium', text: 'Basic trust in place. Add trust badges near the Add to Cart button, showcase press mentions or UGC, and improve review count/star ratings.' },
+      4: { priority: 'low',    text: 'Good trust signals. Add video testimonials or unboxing content and consider a loyalty program to build repeat purchase confidence.' },
+      5: { priority: 'low',    text: 'Outstanding trust signals. Use social proof in retargeting ads to amplify existing credibility.' },
+    }
+  },
+  {
+    id: 'navigation',
+    name: 'Navigation',
+    icon: '🧭',
+    iconBg: 'rgba(108,99,255,.12)',
+    desc: 'Menu clarity, search, collection structure',
+    recs: {
+      1: { priority: 'high',   text: 'Navigation is confusing or broken. A visitor should reach any product in ≤3 clicks. Simplify menus, remove dead links, and add a visible search bar.' },
+      2: { priority: 'high',   text: 'Navigation needs restructuring. Group products into clear collections, add breadcrumbs, and ensure mobile hamburger menu is intuitive.' },
+      3: { priority: 'medium', text: 'Navigation is workable. Add predictive search, filter/sort on collection pages, and a sticky nav for longer pages.' },
+      4: { priority: 'low',    text: 'Good navigation. Add recently-viewed items and consider a mega-menu if your catalog is large.' },
+      5: { priority: 'low',    text: 'Excellent navigation. Monitor with heatmaps (Hotjar) to spot any emerging friction.' },
+    }
+  },
+  {
+    id: 'checkout',
+    name: 'Checkout',
+    icon: '💳',
+    iconBg: 'rgba(0,212,170,.10)',
+    desc: 'Cart flow, payment options, abandoned cart',
+    recs: {
+      1: { priority: 'high',   text: 'Checkout critically needs work. Enable Shopify Payments, add PayPal and a BNPL option (Klarna/AfterPay). Reduce checkout steps and fix any broken discount fields.' },
+      2: { priority: 'high',   text: 'Significant checkout friction. Enable Shop Pay for returning customers, add trust badges at checkout, and set up abandoned cart email sequences (min. 3 emails).' },
+      3: { priority: 'medium', text: 'Checkout is functional but leaking revenue. A/B test your cart page CTA, add an order bump or upsell, and ensure your abandoned cart flow is live.' },
+      4: { priority: 'low',    text: 'Good checkout flow. Add a post-purchase upsell and ensure thank-you page has social sharing incentives.' },
+      5: { priority: 'low',    text: 'Excellent checkout. Test new payment options as they emerge (e.g., crypto, BNPL expansions) and keep monitoring cart abandonment rate.' },
+    }
+  }
+];
+
+/* ── Build form ─────────────────────────────────────────────────── */
+(function buildForm() {
+  const container = document.getElementById('categories-container');
+  CATEGORIES.forEach(cat => {
+    const el = document.createElement('div');
+    el.className = 'category-item';
+    el.innerHTML = `
+      <div class="category-header">
+        <div class="category-info">
+          <div class="cat-icon" style="background:${cat.iconBg}">${cat.icon}</div>
+          <div>
+            <div class="cat-name">${cat.name}</div>
+            <div class="cat-desc">${cat.desc}</div>
+          </div>
+        </div>
+        <div class="score-selector">
+          <span class="score-label">Score:</span>
+          <div class="score-dots" id="dots-${cat.id}">
+            ${[1,2,3,4,5].map(n => `<button type="button" class="score-dot" data-cat="${cat.id}" data-val="${n}" onclick="setScore('${cat.id}',${n})">${n}</button>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="notes-field">
+        <label for="notes-${cat.id}">Notes</label>
+        <textarea id="notes-${cat.id}" placeholder="e.g. Hero image is 4MB, no lazy loading…"></textarea>
+      </div>
+    `;
+    container.appendChild(el);
+  });
+})();
+
+/* ── Score state ────────────────────────────────────────────────── */
+const scores = {};
+CATEGORIES.forEach(c => scores[c.id] = 0);
+
+function setScore(catId, val) {
+  scores[catId] = val;
+  const dots = document.querySelectorAll(`#dots-${catId} .score-dot`);
+  dots.forEach(d => {
+    d.className = 'score-dot';
+    if (parseInt(d.dataset.val) === val) d.classList.add(`active-${val}`);
+  });
+}
+
+/* ── Helpers ────────────────────────────────────────────────────── */
+function getGradeClass(pct) {
+  if (pct < 40) return 'grade-poor';
+  if (pct < 60) return 'grade-fair';
+  if (pct < 80) return 'grade-good';
+  return 'grade-great';
+}
+
+function getBarColor(pct) {
+  if (pct < 40) return '#ff5a5a';
+  if (pct < 60) return '#ffb830';
+  if (pct < 80) return '#5dd870';
+  return '#00d4aa';
+}
+
+function getGradeLabel(score) {
+  if (score < 40) return 'Needs Urgent Work';
+  if (score < 60) return 'Below Average';
+  if (score < 75) return 'Average';
+  if (score < 88) return 'Good';
+  return 'Excellent';
+}
+
+/* ── Generate Report ─────────────────────────────────────────────── */
+function generateReport() {
+  const storeName = document.getElementById('store-name').value.trim() || 'Unnamed Store';
+  const storeUrl  = document.getElementById('store-url').value.trim();
+  const auditor   = document.getElementById('auditor').value.trim() || 'RevNiche Systems';
+
+  // Calculate scores
+  let totalRaw = 0;
+  CATEGORIES.forEach(c => totalRaw += scores[c.id]);
+  const maxRaw = CATEGORIES.length * 5;
+  const overall = Math.round((totalRaw / maxRaw) * 100);
+
+  // Header
+  document.getElementById('rpt-store-name').textContent = storeName;
+  document.getElementById('rpt-store-url').textContent = storeUrl || '';
+  document.getElementById('rpt-meta').innerHTML =
+    `Audited by <strong>${auditor}</strong>`;
+  document.getElementById('rpt-date').textContent = new Date().toLocaleDateString('en-GB', {
+    day:'numeric', month:'long', year:'numeric'
+  });
+
+  // Ring
+  const circumference = 263.9;
+  const offset = circumference - (overall / 100) * circumference;
+  const ringFill = document.getElementById('ring-fill');
+  ringFill.style.strokeDashoffset = circumference; // reset
+  setTimeout(() => ringFill.style.strokeDashoffset = offset, 50);
+  const ringScore = document.getElementById('ring-score-val');
+  ringScore.textContent = overall;
+  ringScore.className = 'ring-score ' + getGradeClass(overall);
+
+  // Score cards
+  const grid = document.getElementById('scores-grid');
+  grid.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const s = scores[cat.id];
+    const pct = (s / 5) * 100;
+    const color = getBarColor(pct);
+    const card = document.createElement('div');
+    card.className = 'score-card';
+    card.innerHTML = `
+      <div class="score-card-header">
+        <div class="score-card-left">
+          <span class="sc-icon">${cat.icon}</span>
+          <span class="sc-name">${cat.name}</span>
+        </div>
+        <span class="sc-val" style="color:${color}">${s}<span style="font-size:13px;color:var(--muted)">/5</span></span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:0%;background:${color}" data-width="${pct}%"></div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+  }, 80);
+
+  // Recommendations — show all, sorted by priority (high first)
+  const recs = [];
+  CATEGORIES.forEach(cat => {
+    const s = scores[cat.id];
+    const rec = cat.recs[s] || cat.recs[3];
+    recs.push({ cat, rec, score: s });
+  });
+  // Sort: high → medium → low
+  const pOrder = { high: 0, medium: 1, low: 2 };
+  recs.sort((a, b) => pOrder[a.rec.priority] - pOrder[b.rec.priority]);
+
+  const recList = document.getElementById('rec-list');
+  recList.innerHTML = '';
+  recs.forEach(({ cat, rec }) => {
+    const item = document.createElement('div');
+    item.className = `rec-item priority-${rec.priority}`;
+    item.innerHTML = `
+      <span class="rec-badge ${rec.priority}">${rec.priority}</span>
+      <div>
+        <div class="rec-label">${cat.icon} ${cat.name}</div>
+        <div class="rec-text">${rec.text}</div>
+      </div>
+    `;
+    recList.appendChild(item);
+  });
+
+  // Notes section
+  const notesDetail = document.getElementById('notes-detail');
+  const notesSection = document.getElementById('notes-section');
+  notesDetail.innerHTML = '';
+  let hasNotes = false;
+  CATEGORIES.forEach(cat => {
+    const note = document.getElementById(`notes-${cat.id}`).value.trim();
+    if (note) {
+      hasNotes = true;
+      const div = document.createElement('div');
+      div.style.marginBottom = '14px';
+      div.innerHTML = `
+        <div style="font-size:13px;font-weight:700;margin-bottom:4px;">${cat.icon} ${cat.name}</div>
+        <div class="notes-report">${note}</div>
+      `;
+      notesDetail.appendChild(div);
+    }
+  });
+  notesSection.style.display = hasNotes ? 'block' : 'none';
+
+  // Summary card score label
+  const gradeLabel = getGradeLabel(overall);
+  document.querySelector('.report-header-left h2').textContent = storeName;
+  document.querySelector('.ring-label').textContent = `${gradeLabel}`;
+
+  // Show report
+  document.getElementById('audit-form').style.display = 'none';
+  document.getElementById('report-view').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backToForm() {
+  document.getElementById('report-view').style.display = 'none';
+  document.getElementById('audit-form').style.display = 'block';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
